@@ -32,4 +32,18 @@ def submit_request():
     conn.commit()
     conn.close()
 
-    return jsonify({'message': 'Request submitted succ
+    return jsonify({'message': 'Request submitted successfully!'})
+
+@app.route('/dashboard')
+def dashboard():
+    conn = sqlite3.connect('requests.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM requests")
+    rows = cursor.fetchall()
+    conn.close()
+
+    return jsonify(rows)
+
+if __name__ == '__main__':
+    init_db()
+    app.run(debug=True)
