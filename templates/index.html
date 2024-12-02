@@ -40,38 +40,3 @@
     </footer>
 </body>
 </html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Service</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
-</head>
-<body>
-    <main class="container">
-        <h1>Email Service</h1>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <ul>
-                {% for category, message in messages %}
-                    <li class="{{ category }}">{{ message }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-        {% endwith %}
-        <form action="/send_email" method="post">
-            <label for="email">Recipient Email:</label>
-            <input type="email" name="email" id="email" placeholder="Enter recipient email" required>
-            
-            <label for="subject">Subject:</label>
-            <input type="text" name="subject" id="subject" placeholder="Enter email subject" required>
-            
-            <label for="message">Message:</label>
-            <textarea name="message" id="message" placeholder="Enter your message" required></textarea>
-            
-            <button type="submit">Send Email</button>
-        </form>
-    </main>
-</body>
-</html>
