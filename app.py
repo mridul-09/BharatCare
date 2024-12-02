@@ -1,20 +1,17 @@
 from flask import Flask, request, render_template, redirect, url_for, flash
-from flask_mail import Mail, Message
 import sqlite3
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"  # Replace with a secure secret key
 
-# Flask-Mail Configuration
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_USERNAME'] = 'mridulsrivastava101@gmail.com'  # Your email
-app.config['MAIL_PASSWORD'] = 'rkoi vjhl wmlm imch'  # Replace with your new app password'  # App password
-app.config['MAIL_DEFAULT_SENDER'] = 'mridulsrivastava101@gmail.com'
-
-mail = Mail(app)
+# Email configuration
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+USERNAME = "mridulsrivastava101@gmail.com"  # Your email
+PASSWORD = "wvlm dqon uzgv vutm"  # App password from Google
 
 # Initialize database
 def init_db():
@@ -39,6 +36,7 @@ def index():
 @app.route('/submit', methods=['POST'])
 def submit_request():
     try:
+        # Collect form data
         data = request.form
         name = data.get('name')
         email = data.get('email')
@@ -51,18 +49,31 @@ def submit_request():
         conn.commit()
 
         # Send email notification
-        msg = Message(
-            subject="Request Received",
-            recipients=[email],  # Send to the email provided in the form
-            body=f"Hi {name},\n\nWe have received your request for the product: {product}. We'll get back to you soon.\n\nThank you!"
-        )
-        mail.send(msg)
+        subject = "Request Received"
+        body = f"Hi {name},\n\nWe have received your request for the product: {product}. We'll get back to you soon.\n\nThank you!"
+
+        # Compose email
+        msg = MIMEMultipart()
+        msg['From'] = USERNAME
+        msg['To'] = email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+
+        # Send email
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()  # Secure connection
+        server.login(USERNAME, PASSWORD)
+        server.sendmail(USERNAME, email, msg.as_string())
+        server.quit()
 
         flash("Request submitted successfully! A confirmation email has been sent.", "success")
-    except sqlite3.Error as e:
-        flash(f"Database error: {e}", "danger")
+
+    except sqlite3.Error as db_error:
+        flash(f"Database error: {db_error}", "danger")
+    except smtplib.SMTPException as smtp_error:
+        flash(f"SMTP error: {smtp_error}", "danger")
     except Exception as e:
-        flash(f"Error sending email: {e}", "danger")
+        flash(f"An error occurred: {e}", "danger")
     finally:
         conn.close()
 
