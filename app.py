@@ -4,17 +4,20 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+# Flask App Configuration
 app = Flask(__name__)
-app.secret_key = "your_secret_key"  # Replace with a secure secret key
+app.secret_key = "default_fallback_key"  # Replace with a secure key for production
 
-# Email configuration
+# Email Configuration
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-USERNAME = "mridulsrivastava101@gmail.com"  # Your email
+USERNAME = "mridulsrivastava101@gmail.com"
 PASSWORD = "wvlm dqon uzgv vutm"  # App password from Google
+ADMIN_EMAIL = "mridulsrivastava101@gmail.com"  # Admin email
 
-# Initialize database
+# Database Initialization
 def init_db():
+    """Initialize the SQLite database."""
     try:
         conn = sqlite3.connect('requests.db')
         cursor = conn.cursor()
@@ -31,49 +34,60 @@ def init_db():
 
 @app.route('/')
 def index():
-    return render_template('index.html')  # Serve the HTML page
+    """Render the homepage."""
+    return render_template('index.html')
 
 @app.route('/submit', methods=['POST'])
 def submit_request():
+    """Handle product request submissions."""
     try:
-        # Collect form data
+        # Get form data
         data = request.form
         name = data.get('name')
         email = data.get('email')
         product = data.get('product')
 
-        # Insert the request into the database
+        # Insert into the database
         conn = sqlite3.connect('requests.db')
         cursor = conn.cursor()
         cursor.execute("INSERT INTO requests (name, email, product) VALUES (?, ?, ?)", (name, email, product))
         conn.commit()
 
-        # Send email notification
-        subject = "Request Received"
-        body = f"Hi {name},\n\nWe have received your request for the product: {product}. We'll get back to you soon.\n\nThank you!"
+        # Send confirmation email to the client
+        client_subject = "Thank You for Your Request"
+        client_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+            <h2 style="color: #4CAF50;">Thank You for Your Request</h2>
+            <p>Dear {name},</p>
+            <p>We have received your request for the product:</p>
+            <p style="font-weight: bold; font-size: 1.1em;">{product}</p>
+            <p>Our team will process your request shortly. We will keep you updated on the progress.</p>
+            <p>Regards,<br>BharatCare Team</p>
+        </body>
+        </html>
+        """
+        send_email(email, client_subject, client_body, is_html=True)
 
-        # Compose email
-        msg = MIMEMultipart()
-        msg['From'] = USERNAME
-        msg['To'] = email
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'plain'))
+        # Send notification email to the admin
+        admin_subject = "New Product Request Submitted"
+        admin_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+            <h2 style="color: #f44336;">New Product Request</h2>
+            <p><strong>Name:</strong> {name}</p>
+            <p><strong>Email:</strong> {email}</p>
+            <p><strong>Product Requested:</strong> {product}</p>
+        </body>
+        </html>
+        """
+        send_email(ADMIN_EMAIL, admin_subject, admin_body, is_html=True)
 
-        # Send email
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()  # Secure connection
-        server.login(USERNAME, PASSWORD)
-        server.sendmail(USERNAME, email, msg.as_string())
-        server.quit()
-
-        flash("Request submitted successfully! A confirmation email has been sent.", "success")
-
-    except sqlite3.Error as db_error:
-        flash(f"Database error: {db_error}", "danger")
-    except smtplib.SMTPException as smtp_error:
-        flash(f"SMTP error: {smtp_error}", "danger")
+        flash("Request submitted successfully! Confirmation email sent to the client and notification sent to the admin.", "success")
+    except sqlite3.Error as e:
+        flash(f"Database error: {e}", "danger")
     except Exception as e:
-        flash(f"An error occurred: {e}", "danger")
+        flash(f"Error sending email: {e}", "danger")
     finally:
         conn.close()
 
@@ -81,8 +95,8 @@ def submit_request():
 
 @app.route('/dashboard')
 def dashboard():
+    """Display the dashboard with submitted requests."""
     try:
-        # Fetch all requests from the database
         conn = sqlite3.connect('requests.db')
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM requests")
@@ -93,8 +107,29 @@ def dashboard():
     finally:
         conn.close()
 
-    # Render the dashboard with the data
     return render_template('dashboard.html', rows=rows)
+
+def send_email(recipient, subject, body, is_html=False):
+    """Send an email to a recipient."""
+    try:
+        # Create the email message
+        msg = MIMEMultipart()
+        msg['From'] = USERNAME
+        msg['To'] = recipient
+        msg['Subject'] = subject
+
+        if is_html:
+            msg.attach(MIMEText(body, 'html'))  # HTML formatted email
+        else:
+            msg.attach(MIMEText(body, 'plain'))  # Plain text email
+
+        # Send the email
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()  # Secure connection
+            server.login(USERNAME, PASSWORD)
+            server.sendmail(USERNAME, recipient, msg.as_string())
+    except Exception as e:
+        print(f"Failed to send email to {recipient}: {e}")
 
 if __name__ == '__main__':
     init_db()
