@@ -1,0 +1,65 @@
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+# Email configuration
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+USERNAME = "mridulsrivastava101@gmail.com"  # Replace with your Gmail
+PASSWORD = "wvlm dqon uzgv vutm"  # App password from Google
+
+# Recipient Email (Replace with the target email address)
+RECIPIENT = "connects.sde@gmail.com"
+
+# Compose the email
+subject = "Test Email"
+body = "This is a test email sent from the Python script using Flask and SMTP."
+
+# Creating email message
+msg = MIMEMultipart()
+msg['From'] = USERNAME
+msg['To'] = RECIPIENT
+msg['Subject'] = subject
+
+msg.attach(MIMEText(body, 'plain'))
+
+try:
+    # Setting up the server
+    server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+    server.starttls()  # Secure the connection
+    server.login(USERNAME, PASSWORD)  # Login to the email account
+    server.sendmail(USERNAME, RECIPIENT, msg.as_string())  # Send the email
+    server.quit()  # Close the connection
+    print("Email sent successfully!")
+except Exception as e:
+    print(f"Failed to send email: {e}")
+import smtplib
+from email.mime.text import MIMEText
+
+# Email Configuration
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+USERNAME = "mridulsrivastava101@gmail.com"  # Your Gmail
+PASSWORD = "wvlm dqon uzgv vutm"  # Your generated app password
+
+# Email Content
+recipient_email = "connects.sde@gmail.com"  # Replace with recipient email
+subject = "Test Email"
+body = "This is a test email using the new app password."
+
+# Create the email message
+msg = MIMEText(body)
+msg['Subject'] = subject
+msg['From'] = USERNAME
+msg['To'] = recipient_email
+
+# Send the email
+try:
+    server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+    server.starttls()  # Start TLS encryption
+    server.login(USERNAME, PASSWORD)  # Log in to your Gmail account
+    server.sendmail(USERNAME, [recipient_email], msg.as_string())
+    server.quit()
+    print("Email sent successfully!")
+except Exception as e:
+    print(f"Failed to send email: {e}")
