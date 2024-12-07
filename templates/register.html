@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+</head>
+<body>
+    <nav class="container-fluid">
+        <ul>
+            <li><strong>BharatCare</strong></li>
+        </ul>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/login" role="button">Login</a></li>
+        </ul>
+    </nav>
+    <main class="container">
+        <h2>Register</h2>
+        <form action="/register" method="POST">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" placeholder="Your Name" required>
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="Your Email" required>
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Create Password" required>
+            <button type="submit">Register</button>
+        </form>
+        <p>Already have an account? <a href="/login">Login here</a>.</p>
+    </main>
+    <footer class="container">
+        <small>© 2024 BharatCare. All rights reserved.</small>
+    </footer>
+</body>
+</html>
+
+

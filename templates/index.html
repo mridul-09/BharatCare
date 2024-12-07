@@ -14,10 +14,18 @@
         <ul>
             <li><a href="/">Home</a></li>
             <li><a href="/dashboard" role="button">Dashboard</a></li>
+            <li><a href="/contact" role="button">Contact Us</a></li>
+            {% if user_logged_in %}
+            <li><a href="/logout" role="button">Logout</a></li>
+            {% else %}
+            <li><a href="/register" role="button">Register</a></li>
+            <li><a href="/login" role="button">Login</a></li>
+            {% endif %}
         </ul>
     </nav>
-
     <main class="container">
+        <h2>Welcome to BharatCare</h2>
+        <p>Your one-stop solution for submitting and tracking product requests.</p>
         <section>
             <hgroup>
                 <h2>Request a Product</h2>
@@ -34,9 +42,22 @@
             </form>
         </section>
     </main>
-
     <footer class="container">
-        <small><a href="#">Privacy Policy</a> • <a href="#">Terms of Service</a></small>
+        <small>© 2024 BharatCare. All rights reserved.</small>
     </footer>
+
+    <!-- Start of Tawk.to Script -->
+    <script type="text/javascript">
+        var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+        (function(){
+            var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
+            s1.async = true;
+            s1.src = 'https://embed.tawk.to/674ea8a14304e3196aeba628/1ie5k5e41';
+            s1.charset = 'UTF-8';
+            s1.setAttribute('crossorigin', '*');
+            s0.parentNode.insertBefore(s1, s0);
+        })();
+    </script>
+    <!-- End of Tawk.to Script -->
 </body>
 </html>

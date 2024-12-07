@@ -1,135 +1,156 @@
-from flask import Flask, request, render_template, redirect, url_for, flash
+from flask import Flask, request, render_template, redirect, url_for, flash, session
 import sqlite3
-import smtplib
+from werkzeug.security import generate_password_hash, check_password_hash
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import smtplib
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Flask App Configuration
 app = Flask(__name__)
-app.secret_key = "default_fallback_key"  # Replace with a secure key for production
+app.secret_key = os.getenv("SECRET_KEY", "default_fallback_key")
 
 # Email Configuration
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-USERNAME = "mridulsrivastava101@gmail.com"
-PASSWORD = "wvlm dqon uzgv vutm"  # App password from Google
-ADMIN_EMAIL = "mridulsrivastava101@gmail.com"  # Admin email
+USERNAME = os.getenv("SMTP_USERNAME", "mridulsrivastava101@gmail.com")
+PASSWORD = os.getenv("SMTP_PASSWORD", "wvlm dqon uzgv vutm")
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "mridulsrivastava101@gmail.com")
 
 # Database Initialization
 def init_db():
-    """Initialize the SQLite database."""
     try:
-        conn = sqlite3.connect('requests.db')
-        cursor = conn.cursor()
-        cursor.execute('''CREATE TABLE IF NOT EXISTS requests (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            name TEXT NOT NULL,
-                            email TEXT NOT NULL,
-                            product TEXT NOT NULL)''')
-        conn.commit()
+        with sqlite3.connect('requests.db') as conn:
+            cursor = conn.cursor()
+            cursor.execute('''CREATE TABLE IF NOT EXISTS requests (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                name TEXT NOT NULL,
+                                email TEXT NOT NULL,
+                                product TEXT NOT NULL,
+                                user_id INTEGER NOT NULL)''')
+            conn.commit()
+
+        with sqlite3.connect('users.db') as conn:
+            cursor = conn.cursor()
+            cursor.execute('''CREATE TABLE IF NOT EXISTS users (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                name TEXT NOT NULL,
+                                email TEXT NOT NULL UNIQUE,
+                                password TEXT NOT NULL)''')
+            conn.commit()
     except sqlite3.Error as e:
         print(f"Database error: {e}")
-    finally:
-        conn.close()
 
-@app.route('/')
-def index():
-    """Render the homepage."""
-    return render_template('index.html')
-
-@app.route('/submit', methods=['POST'])
-def submit_request():
-    """Handle product request submissions."""
-    try:
-        # Get form data
-        data = request.form
-        name = data.get('name')
-        email = data.get('email')
-        product = data.get('product')
-
-        # Insert into the database
-        conn = sqlite3.connect('requests.db')
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO requests (name, email, product) VALUES (?, ?, ?)", (name, email, product))
-        conn.commit()
-
-        # Send confirmation email to the client
-        client_subject = "Thank You for Your Request"
-        client_body = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6;">
-            <h2 style="color: #4CAF50;">Thank You for Your Request</h2>
-            <p>Dear {name},</p>
-            <p>We have received your request for the product:</p>
-            <p style="font-weight: bold; font-size: 1.1em;">{product}</p>
-            <p>Our team will process your request shortly. We will keep you updated on the progress.</p>
-            <p>Regards,<br>BharatCare Team</p>
-        </body>
-        </html>
-        """
-        send_email(email, client_subject, client_body, is_html=True)
-
-        # Send notification email to the admin
-        admin_subject = "New Product Request Submitted"
-        admin_body = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6;">
-            <h2 style="color: #f44336;">New Product Request</h2>
-            <p><strong>Name:</strong> {name}</p>
-            <p><strong>Email:</strong> {email}</p>
-            <p><strong>Product Requested:</strong> {product}</p>
-        </body>
-        </html>
-        """
-        send_email(ADMIN_EMAIL, admin_subject, admin_body, is_html=True)
-
-        flash("Request submitted successfully! Confirmation email sent to the client and notification sent to the admin.", "success")
-    except sqlite3.Error as e:
-        flash(f"Database error: {e}", "danger")
-    except Exception as e:
-        flash(f"Error sending email: {e}", "danger")
-    finally:
-        conn.close()
-
-    return redirect(url_for('index'))
-
-@app.route('/dashboard')
-def dashboard():
-    """Display the dashboard with submitted requests."""
-    try:
-        conn = sqlite3.connect('requests.db')
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM requests")
-        rows = cursor.fetchall()
-    except sqlite3.Error as e:
-        rows = []
-        flash(f"Database error: {e}", "danger")
-    finally:
-        conn.close()
-
-    return render_template('dashboard.html', rows=rows)
-
+# Email Sending Function
 def send_email(recipient, subject, body, is_html=False):
-    """Send an email to a recipient."""
     try:
-        # Create the email message
         msg = MIMEMultipart()
         msg['From'] = USERNAME
         msg['To'] = recipient
         msg['Subject'] = subject
-
         if is_html:
-            msg.attach(MIMEText(body, 'html'))  # HTML formatted email
+            msg.attach(MIMEText(body, 'html'))
         else:
-            msg.attach(MIMEText(body, 'plain'))  # Plain text email
+            msg.attach(MIMEText(body, 'plain'))
 
-        # Send the email
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls()  # Secure connection
+            server.starttls()
             server.login(USERNAME, PASSWORD)
             server.sendmail(USERNAME, recipient, msg.as_string())
     except Exception as e:
         print(f"Failed to send email to {recipient}: {e}")
+
+# Routes
+@app.route('/')
+def index():
+    return render_template('index.html', user_logged_in=('user_id' in session))
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        try:
+            name = request.form['name']
+            email = request.form['email']
+            password = generate_password_hash(request.form['password'], method='pbkdf2:sha256')
+            with sqlite3.connect('users.db') as conn:
+                cursor = conn.cursor()
+                cursor.execute("INSERT INTO users (name, email, password) VALUES (?, ?, ?)", (name, email, password))
+                conn.commit()
+            flash("Registration successful! Please log in.", "success")
+            return redirect(url_for('login'))
+        except sqlite3.IntegrityError:
+            flash("Email already exists. Please use a different email.", "danger")
+    return render_template('register.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        with sqlite3.connect('users.db') as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+            user = cursor.fetchone()
+        if user and check_password_hash(user[3], password):
+            session['user_id'] = user[0]
+            session['user_name'] = user[1]
+            flash("Login successful!", "success")
+            return redirect(url_for('dashboard'))
+        else:
+            flash("Invalid email or password. <a href='/register'>Unregistered user? Register here.</a>", "danger")
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash("You have been logged out.", "info")
+    return redirect(url_for('index'))
+
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session:
+        flash("Please log in to view your dashboard.", "danger")
+        return redirect(url_for('login'))
+    user_id = session['user_id']
+    with sqlite3.connect('requests.db') as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM requests WHERE user_id = ?", (user_id,))
+        rows = cursor.fetchall()
+    return render_template('dashboard.html', rows=rows)
+
+@app.route('/contact', methods=['GET', 'POST'])
+def contact():
+    """Handle customer inquiries."""
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        message = request.form['message']
+
+        try:
+            # Notify the admin via email
+            admin_subject = "New Customer Inquiry"
+            admin_body = f"""
+            <html>
+            <body>
+                <h2>Customer Inquiry</h2>
+                <p><strong>Name:</strong> {name}</p>
+                <p><strong>Email:</strong> {email}</p>
+                <p><strong>Message:</strong> {message}</p>
+            </body>
+            </html>
+            """
+            send_email(ADMIN_EMAIL, admin_subject, admin_body, is_html=True)
+
+            flash("Your message has been sent successfully!", "success")
+            return redirect(url_for('contact'))
+        except Exception as e:
+            flash(f"Error sending your message: {e}", "danger")
+
+    return render_template('contact.html')
 
 if __name__ == '__main__':
     init_db()

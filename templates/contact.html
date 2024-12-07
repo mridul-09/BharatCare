@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+</head>
+<body>
+    <nav class="container-fluid">
+        <ul>
+            <li><strong>BharatCare</strong></li>
+        </ul>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/dashboard" role="button">Dashboard</a></li>
+            <li><a href="/contact" role="button">Contact Us</a></li>
+            {% if user_logged_in %}
+            <li><a href="/logout" role="button">Logout</a></li>
+            {% else %}
+            <li><a href="/register" role="button">Register</a></li>
+            <li><a href="/login" role="button">Login</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    <main class="container">
+        <h2>Contact Us</h2>
+        <form action="/contact" method="POST">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" placeholder="Your Name" required>
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="Your Email" required>
+            <label for="message">Message</label>
+            <textarea id="message" name="message" placeholder="Write your message here" required></textarea>
+            <button type="submit">Send Message</button>
+        </form>
+    </main>
+    <footer class="container">
+        <small>© 2024 BharatCare. All rights reserved.</small>
+    </footer>
+</body>
+</html>
