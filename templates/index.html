@@ -13,14 +13,17 @@
         </ul>
         <ul>
             <li><a href="/">Home</a></li>
-            <li><a href="/dashboard" role="button">Dashboard</a></li>
-            <li><a href="/contact" role="button">Contact Us</a></li>
             {% if user_logged_in %}
+            <li><a href="/dashboard" role="button">Dashboard</a></li>
             <li><a href="/logout" role="button">Logout</a></li>
+            {% if user_is_admin %}
+            <li><a href="/admin" role="button">Admin Panel</a></li>
+            {% endif %}
             {% else %}
             <li><a href="/register" role="button">Register</a></li>
             <li><a href="/login" role="button">Login</a></li>
             {% endif %}
+            <li><a href="/contact" role="button">Contact Us</a></li>
         </ul>
     </nav>
     <main class="container">
@@ -40,6 +43,13 @@
                 <textarea id="product" name="product" placeholder="Describe the product you need" required></textarea>
                 <button type="submit">Submit Request</button>
             </form>
+        </section>
+        <section>
+            <hgroup>
+                <h2>Forgot Your Password?</h2>
+                <h3>Recover your account easily</h3>
+            </hgroup>
+            <p>If you've forgotten your password, <a href="/forgot-password">click here to reset it.</a></p>
         </section>
     </main>
     <footer class="container">
